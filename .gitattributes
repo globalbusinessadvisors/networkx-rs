@@ -1,30 +1,15 @@
-# Linguist overrides to properly detect Rust project
-*.rs linguist-language=Rust linguist-detectable=true
+# Force GitHub to recognize this as a Rust project
+*.rs linguist-language=Rust
 *.toml linguist-language=TOML
 
-# Python bindings are just wrappers for Rust implementation
+# Documentation
+*.md linguist-documentation
+
+# Python bindings are secondary - they're just wrappers
 python/**/*.py linguist-vendored
 *.py linguist-vendored
-test_implementation.py linguist-vendored
 
-# Mark vendored/generated files
-.venv/* linguist-vendored
-target/* linguist-vendored
-Cargo.lock linguist-generated
-*.so linguist-generated
-
-# Documentation and data files
-*.md linguist-documentation
-*.txt linguist-documentation
-IMPLEMENTATION_GUIDE.md linguist-documentation
-IMPLEMENTATION_SUMMARY.md linguist-documentation
-
-# Build/config files shouldn't count as primary language
+# Ignore build artifacts and configs for language stats
 Makefile linguist-vendored
-*.yml linguist-vendored
-*.yaml linguist-vendored
-
-# Ensure Rust files are counted as primary language
-src/**/*.rs linguist-detectable=true
-src/algorithms/**/*.rs linguist-detectable=true
-src/graph/**/*.rs linguist-detectable=true
+target/* linguist-vendored
+*.lock linguist-generated
