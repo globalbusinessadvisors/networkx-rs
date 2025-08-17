@@ -67,6 +67,10 @@ inherits = "release"
 name = "dijkstra"
 harness = false
 
+[[bench]]
+name = "comprehensive"
+harness = false
+
 [package.metadata.maturin]
 python-source = "python"
 module-name = "networkx_rs.networkx_rs"
