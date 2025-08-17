@@ -10,3 +10,4 @@ pub mod mst;
 pub mod flow;
 pub mod coloring;
 pub mod clique;
+pub mod isomorphism;

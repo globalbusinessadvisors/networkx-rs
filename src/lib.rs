@@ -10,6 +10,12 @@ pub mod algorithms;
 pub mod utils;
 pub mod errors;
 
+#[cfg(feature = "gpu")]
+pub mod gpu;
+
+#[cfg(feature = "distributed")]
+pub mod distributed;
+
 #[cfg(feature = "pyo3")]
 pub mod python;
 

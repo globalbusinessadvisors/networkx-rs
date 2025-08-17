@@ -25,12 +25,25 @@ rustc-hash = "2.0"
 rand = "0.8"
 rand_chacha = "0.3"
 
+# GPU Support (optional)
+arrayfire = { version = "3.8", optional = true }
+cuda-sys = { version = "0.2", optional = true }
+cust = { version = "0.3", optional = true }
+ndarray = { version = "0.15", optional = true }
+sprs = { version = "0.11", optional = true }
+
+# Distributed Computing (optional)
+tonic = { version = "0.11", optional = true }
+prost = { version = "0.12", optional = true }
+tokio = { version = "1.35", features = ["full"], optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+bincode = { version = "1.3", optional = true }
+
 # Python bindings
 pyo3 = { version = "0.22", features = ["extension-module", "abi3-py39"], optional = true }
 numpy = { version = "0.22", optional = true }
 
-# Serialization
-serde = { version = "1.0", features = ["derive"], optional = true }
+# Serialization (already defined above)
 serde_json = { version = "1.0", optional = true }
 
 # Performance
@@ -46,8 +59,12 @@ approx = "0.5"
 default = ["pyo3", "numpy", "parallel"]
 pyo3 = ["dep:pyo3"]
 parallel = ["rayon"]
-# simd feature disabled due to compatibility issues with stable Rust
-# simd = ["packed_simd_2"]
+# GPU features
+gpu = ["arrayfire", "ndarray", "sprs"]
+cuda = ["cuda-sys", "cust"]
+# Distributed features
+distributed = ["tonic", "prost", "tokio", "serde", "bincode"]
+# Other features
 serialize = ["serde", "serde_json"]
 petgraph-compat = ["petgraph"]
 numpy-compat = ["numpy"]
