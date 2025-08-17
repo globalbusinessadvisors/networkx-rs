@@ -1,34 +1,24 @@
-//! Utility functions and helpers
+//! Utility functions for NetworkX-RS
 
-use crate::graph::Node;
 use std::collections::HashMap;
+use std::hash::Hash;
 
-/// Convert node labels to indices
-pub fn create_node_index_map<T: Clone + Eq + std::hash::Hash>(
-    nodes: &[T]
-) -> (HashMap<T, Node>, Vec<T>) {
-    let mut node_to_index = HashMap::new();
-    let mut index_to_node = Vec::new();
-    
-    for (i, node) in nodes.iter().enumerate() {
-        node_to_index.insert(node.clone(), i);
-        index_to_node.push(node.clone());
-    }
-    
-    (node_to_index, index_to_node)
+/// Helper function to create a mapping from nodes to indices
+pub fn create_node_index_map<N: Hash + Eq + Clone>(nodes: &[N]) -> HashMap<N, usize> {
+    nodes.iter()
+        .enumerate()
+        .map(|(i, n)| (n.clone(), i))
+        .collect()
 }
 
-/// Parallel iteration utilities
-#[cfg(feature = "parallel")]
-pub mod parallel {
-    use rayon::prelude::*;
-    
-    pub fn parallel_map<T, U, F>(items: Vec<T>, f: F) -> Vec<U>
-    where
-        T: Send + Sync,
-        U: Send + Sync,
-        F: Fn(T) -> U + Send + Sync,
-    {
-        items.into_par_iter().map(f).collect()
+/// Helper function to calculate the degree of nodes
+pub fn calculate_degrees<N: Hash + Eq + Clone>(
+    edges: &[(N, N)],
+) -> HashMap<N, usize> {
+    let mut degrees = HashMap::new();
+    for (u, v) in edges {
+        *degrees.entry(u.clone()).or_insert(0) += 1;
+        *degrees.entry(v.clone()).or_insert(0) += 1;
     }
+    degrees
 }
