@@ -1,7 +1,7 @@
 """Graph classes with NetworkX-compatible API"""
 
 from typing import Optional, Any, Dict, List, Tuple, Iterator
-import networkx_rs._lib as _lib
+import networkx_rs.networkx_rs as _lib
 
 
 class Graph:
@@ -35,7 +35,7 @@ class Graph:
     
     def add_node(self, node_for_adding, **attr):
         """Add a single node with optional attributes"""
-        return self._graph.add_node(node_for_adding, attr)
+        return self._graph.add_node(node_for_adding)
     
     def add_nodes_from(self, nodes_for_adding, **attr):
         """Add multiple nodes"""
@@ -48,8 +48,8 @@ class Graph:
     
     def add_edge(self, u, v, **attr):
         """Add an edge between u and v"""
-        weight = attr.pop('weight', 1.0)
-        return self._graph.add_edge(u, v, weight, attr)
+        weight = attr.pop('weight', None)
+        return self._graph.add_edge(u, v, weight)
     
     def add_edges_from(self, edges_for_adding, **attr):
         """Add multiple edges"""
@@ -79,22 +79,20 @@ class Graph:
     
     def number_of_nodes(self) -> int:
         """Return the number of nodes"""
-        return self._graph.number_of_nodes()
+        return self._graph.node_count()
     
     def number_of_edges(self) -> int:
         """Return the number of edges"""
-        return self._graph.number_of_edges()
+        return self._graph.edge_count()
     
     def nodes(self, data=False):
         """Return a view of nodes"""
-        if data:
-            return self._graph.nodes_with_data()
+        # For now, just return the nodes without data
         return self._graph.nodes()
     
     def edges(self, data=False, default=None):
         """Return a view of edges"""
-        if data:
-            return self._graph.edges_with_data(default)
+        # For now, just return the edges without data
         return self._graph.edges()
     
     def neighbors(self, node):

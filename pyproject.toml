@@ -49,7 +49,7 @@ benchmark = [
 
 [tool.maturin]
 python-source = "python"
-module-name = "networkx_rs._lib"
+module-name = "networkx_rs.networkx_rs"
 features = ["pyo3/extension-module"]
 
 [tool.ruff]

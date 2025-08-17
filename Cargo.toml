@@ -32,7 +32,7 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 serde_json = { version = "1.0", optional = true }
 
 # Performance
-packed_simd_2 = { version = "0.3", optional = true }
+# packed_simd_2 removed due to requiring nightly Rust
 blas-src = { version = "0.10", optional = true }
 
 [dev-dependencies]
@@ -46,7 +46,8 @@ rand_chacha = "0.3"
 default = ["pyo3", "numpy", "parallel"]
 pyo3 = ["dep:pyo3"]
 parallel = ["rayon"]
-simd = ["packed_simd_2"]
+# simd feature disabled due to compatibility issues with stable Rust
+# simd = ["packed_simd_2"]
 serialize = ["serde", "serde_json"]
 petgraph-compat = ["petgraph"]
 numpy-compat = ["numpy"]

@@ -3,7 +3,7 @@
 Drop-in replacement for NetworkX with Rust performance.
 """
 
-from networkx_rs._lib import (
+from networkx_rs.networkx_rs import (
     __version__,
     __rust_version__,
 )

@@ -3,7 +3,7 @@
 //! This library provides Rust implementations of NetworkX's core algorithms
 //! with Python bindings for seamless integration.
 
-#![cfg_attr(feature = "simd", feature(portable_simd))]
+// SIMD feature removed due to requiring nightly Rust
 
 pub mod graph;
 pub mod algorithms;
