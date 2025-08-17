@@ -11,6 +11,7 @@ pub enum NetworkXError {
     GraphCycle,
     InvalidInput(String),
     AlgorithmError(String),
+    ComputationError(String),
 }
 
 impl fmt::Display for NetworkXError {
@@ -23,6 +24,7 @@ impl fmt::Display for NetworkXError {
             NetworkXError::GraphCycle => write!(f, "Graph contains a cycle"),
             NetworkXError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
             NetworkXError::AlgorithmError(msg) => write!(f, "Algorithm error: {}", msg),
+            NetworkXError::ComputationError(msg) => write!(f, "Computation error: {}", msg),
         }
     }
 }

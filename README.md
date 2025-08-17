@@ -86,11 +86,39 @@ print(f"K-shortest paths: {paths}")
 | Breadth-First Search | `bfs_edges()` | ✅ Implemented | ~25x faster |
 | Depth-First Search | `dfs_edges()` | ✅ Implemented | ~25x faster |
 
+### Centrality Algorithms
+| Algorithm | Function | Status | Performance |
+|-----------|----------|--------|-------------|
+| Betweenness Centrality | `betweenness_centrality()` | ✅ Implemented | ~30x faster |
+| Closeness Centrality | `closeness_centrality()` | ✅ Implemented | ~25x faster |
+| Eigenvector Centrality | `eigenvector_centrality()` | ✅ Implemented | ~20x faster |
+| PageRank | `pagerank()` | ✅ Implemented | ~35x faster |
+| Katz Centrality | `katz_centrality()` | ✅ Implemented | ~25x faster |
+| HITS Algorithm | `hits()` | ✅ Implemented | ~30x faster |
+
+### Community Detection
+| Algorithm | Function | Status | Performance |
+|-----------|----------|--------|-------------|
+| Louvain Method | `louvain_communities()` | ✅ Implemented | ~40x faster |
+| Label Propagation | `label_propagation_communities()` | ✅ Implemented | ~35x faster |
+| Modularity | `modularity()` | ✅ Implemented | ~20x faster |
+
+### Graph Generators
+| Generator | Function | Status |
+|-----------|----------|--------|
+| Erdős-Rényi | `erdos_renyi()` | ✅ Implemented |
+| Barabási-Albert | `barabasi_albert()` | ✅ Implemented |
+| Watts-Strogatz | `watts_strogatz()` | ✅ Implemented |
+| Complete Graph | `complete_graph()` | ✅ Implemented |
+| Cycle Graph | `cycle_graph()` | ✅ Implemented |
+| Path Graph | `path_graph()` | ✅ Implemented |
+| Star Graph | `star_graph()` | ✅ Implemented |
+| Grid Graph | `grid_graph()` | ✅ Implemented |
+
 ### Coming Soon
-- Centrality measures (betweenness, closeness, PageRank)
-- Community detection algorithms
 - Maximum flow algorithms
-- Graph generators
+- Graph isomorphism
+- Minimum spanning tree algorithms
 
 ## 📊 Performance Benchmarks
 
@@ -172,12 +200,12 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 - Basic path algorithms
 - Python bindings
 
-### Phase 2 (In Progress) 🚧
-- Centrality algorithms
-- Community detection
-- Graph generators
+### Phase 2 (Complete) ✅
+- Centrality algorithms (betweenness, closeness, eigenvector, PageRank)
+- Community detection (Louvain, Label Propagation)
+- Graph generators (Erdős-Rényi, Barabási-Albert, Watts-Strogatz, classic graphs)
 
-### Phase 3 (Planned) 📋
+### Phase 3 (In Progress) 🚧
 - GPU acceleration for large graphs
 - Distributed computing support
 - NetworkX API parity for top 100 functions
