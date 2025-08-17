@@ -1,15 +1,21 @@
-# Force GitHub to recognize this as a Rust project
+# GitHub Linguist configuration for language detection
+
+# Primary language: Rust
 *.rs linguist-language=Rust
+
+# Secondary files
 *.toml linguist-language=TOML
+*.py linguist-language=Python
 
 # Documentation
 *.md linguist-documentation
 
-# Python bindings are secondary - they're just wrappers
-python/**/*.py linguist-vendored
-*.py linguist-vendored
-
-# Ignore build artifacts and configs for language stats
+# Vendored/Generated files (don't count toward language stats)
 Makefile linguist-vendored
-target/* linguist-vendored
 *.lock linguist-generated
+*.so linguist-generated
+*.pyc linguist-generated
+__pycache__/* linguist-generated
+
+# Test files are supplementary
+test_*.py linguist-vendored
