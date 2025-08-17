@@ -48,11 +48,15 @@ impl GpuMatrix {
         {
             // Use ArrayFire for GPU computation
             use arrayfire as af;
-            let mat = af::Array::new(&self.data, af::Dim4::new(&[self.cols as u64, self.rows as u64, 1, 1]));
+            
+            // Create matrix in column-major format for ArrayFire
+            let mat = af::Array::new(&self.data, af::Dim4::new(&[self.rows as u64, self.cols as u64, 1, 1]));
             let v = af::Array::new(&vec.data, af::Dim4::new(&[vec.len() as u64, 1, 1, 1]));
+            
+            // Perform matrix-vector multiplication
             let res = af::matmul(&mat, &v, af::MatProp::NONE, af::MatProp::NONE);
             
-            // Copy result back
+            // Copy result back to host
             let mut host_result = vec![0.0f32; self.rows];
             res.host(&mut host_result);
             result.data = host_result;
@@ -70,6 +74,70 @@ impl GpuMatrix {
         }
         
         result
+    }
+    
+    /// Element-wise matrix operations
+    pub fn add(&self, other: &GpuMatrix) -> GpuMatrix {
+        assert_eq!(self.dims(), other.dims());
+        
+        #[cfg(feature = "arrayfire")]
+        {
+            use arrayfire as af;
+            let a = af::Array::new(&self.data, af::Dim4::new(&[self.rows as u64, self.cols as u64, 1, 1]));
+            let b = af::Array::new(&other.data, af::Dim4::new(&[other.rows as u64, other.cols as u64, 1, 1]));
+            let result = af::add(&a, &b, false);
+            
+            let mut host_result = vec![0.0f32; self.rows * self.cols];
+            result.host(&mut host_result);
+            
+            GpuMatrix {
+                rows: self.rows,
+                cols: self.cols,
+                data: host_result,
+            }
+        }
+        #[cfg(not(feature = "arrayfire"))]
+        {
+            let data: Vec<f32> = self.data.iter()
+                .zip(other.data.iter())
+                .map(|(a, b)| a + b)
+                .collect();
+            
+            GpuMatrix {
+                rows: self.rows,
+                cols: self.cols,
+                data,
+            }
+        }
+    }
+    
+    /// Scalar multiplication
+    pub fn scale(&self, scalar: f32) -> GpuMatrix {
+        #[cfg(feature = "arrayfire")]
+        {
+            use arrayfire as af;
+            let a = af::Array::new(&self.data, af::Dim4::new(&[self.rows as u64, self.cols as u64, 1, 1]));
+            let result = af::mul(&a, &scalar, false);
+            
+            let mut host_result = vec![0.0f32; self.rows * self.cols];
+            result.host(&mut host_result);
+            
+            GpuMatrix {
+                rows: self.rows,
+                cols: self.cols,
+                data: host_result,
+            }
+        }
+        #[cfg(not(feature = "arrayfire"))]
+        {
+            let data: Vec<f32> = self.data.iter().map(|x| x * scalar).collect();
+            
+            GpuMatrix {
+                rows: self.rows,
+                cols: self.cols,
+                data,
+            }
+        }
     }
 }
 

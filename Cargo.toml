@@ -88,6 +88,10 @@ harness = false
 name = "comprehensive"
 harness = false
 
+[[bench]]
+name = "phase4_gpu_distributed"
+harness = false
+
 [package.metadata.maturin]
 python-source = "python"
 module-name = "networkx_rs.networkx_rs"

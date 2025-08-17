@@ -27,36 +27,81 @@ where
     // Convert graph to GPU format
     let gpu_graph = GpuGraph::from_graph(graph);
     
-    // Initialize PageRank vector
-    let mut rank = GpuVector::from_vec(vec![1.0 / n as f32; n]);
-    
-    // Create transition matrix
-    let matrix = create_transition_matrix(&gpu_graph, alpha as f32);
-    
-    // Power iteration
-    for _iter in 0..max_iter {
-        let old_rank = rank.data.clone();
-        rank = matrix.matvec(&rank);
-        rank.normalize();
+    #[cfg(feature = "arrayfire")]
+    {
+        use arrayfire as af;
         
-        // Check convergence
-        let diff: f32 = old_rank.iter()
-            .zip(rank.data.iter())
-            .map(|(old, new)| (old - new).abs())
-            .sum();
+        // Initialize PageRank vector on GPU
+        let initial_rank = 1.0 / n as f32;
+        let mut rank = af::constant(initial_rank, af::Dim4::new(&[n as u64, 1, 1, 1]));
         
-        if diff < tolerance as f32 {
-            break;
+        // Create transition matrix on GPU
+        let (row_offsets, col_indices, values) = create_sparse_transition_matrix(&gpu_graph, alpha as f32);
+        
+        let af_row_offsets = af::Array::new(&row_offsets, af::Dim4::new(&[row_offsets.len() as u64, 1, 1, 1]));
+        let af_col_indices = af::Array::new(&col_indices, af::Dim4::new(&[col_indices.len() as u64, 1, 1, 1]));
+        let af_values = af::Array::new(&values, af::Dim4::new(&[values.len() as u64, 1, 1, 1]));
+        
+        // Power iteration on GPU
+        for _iter in 0..max_iter {
+            let old_rank = rank.copy();
+            
+            // Sparse matrix-vector multiplication
+            rank = gpu_sparse_matvec(&af_row_offsets, &af_col_indices, &af_values, &rank, n);
+            
+            // Normalize
+            let sum = af::sum_all(&rank).0;
+            if sum > 0.0 {
+                rank = af::div(&rank, &sum, false);
+            }
+            
+            // Check convergence
+            let diff = af::sum_all(&af::abs(&af::sub(&rank, &old_rank, false))).0;
+            if diff < tolerance as f32 {
+                break;
+            }
         }
+        
+        // Copy result back to host
+        let mut host_result = vec![0.0f32; n];
+        rank.host(&mut host_result);
+        
+        // Convert to HashMap
+        let mut result = HashMap::new();
+        for (i, node) in nodes.iter().enumerate() {
+            result.insert(node.clone(), host_result[i] as f64);
+        }
+        
+        Ok(result)
     }
-    
-    // Convert back to HashMap
-    let mut result = HashMap::new();
-    for (i, node) in nodes.iter().enumerate() {
-        result.insert(node.clone(), rank.data[i] as f64);
+    #[cfg(not(feature = "arrayfire"))]
+    {
+        // CPU fallback
+        let mut rank = GpuVector::from_vec(vec![1.0 / n as f32; n]);
+        let matrix = create_transition_matrix(&gpu_graph, alpha as f32);
+        
+        for _iter in 0..max_iter {
+            let old_rank = rank.data.clone();
+            rank = matrix.matvec(&rank);
+            rank.normalize();
+            
+            let diff: f32 = old_rank.iter()
+                .zip(rank.data.iter())
+                .map(|(old, new)| (old - new).abs())
+                .sum();
+            
+            if diff < tolerance as f32 {
+                break;
+            }
+        }
+        
+        let mut result = HashMap::new();
+        for (i, node) in nodes.iter().enumerate() {
+            result.insert(node.clone(), rank.data[i] as f64);
+        }
+        
+        Ok(result)
     }
-    
-    Ok(result)
 }
 
 /// Create transition matrix for PageRank
@@ -90,6 +135,117 @@ fn create_transition_matrix(graph: &GpuGraph, alpha: f32) -> GpuMatrix {
     }
     
     matrix
+}
+
+/// Create sparse transition matrix for GPU PageRank
+fn create_sparse_transition_matrix(graph: &GpuGraph, alpha: f32) -> (Vec<u32>, Vec<u32>, Vec<f32>) {
+    let n = graph.num_nodes;
+    
+    // Compute out-degrees
+    let mut out_degree = vec![0u32; n];
+    for i in 0..n {
+        out_degree[i] = graph.row_offsets[i + 1] - graph.row_offsets[i];
+    }
+    
+    // Build CSR format for column-stochastic matrix (transpose of adjacency)
+    let mut row_offsets = vec![0u32; n + 1];
+    let mut col_indices = Vec::new();
+    let mut values = Vec::new();
+    
+    // Count incoming edges for each node
+    let mut in_degree = vec![0u32; n];
+    for i in 0..n {
+        let start = graph.row_offsets[i] as usize;
+        let end = graph.row_offsets[i + 1] as usize;
+        for idx in start..end {
+            let j = graph.col_indices[idx] as usize;
+            in_degree[j] += 1;
+        }
+    }
+    
+    // Build row offsets
+    for i in 0..n {
+        row_offsets[i + 1] = row_offsets[i] + in_degree[i];
+    }
+    
+    // Reset in_degree to use as counters
+    in_degree.fill(0);
+    
+    // Fill transpose matrix
+    for i in 0..n {
+        let start = graph.row_offsets[i] as usize;
+        let end = graph.row_offsets[i + 1] as usize;
+        let degree = out_degree[i] as f32;
+        
+        for idx in start..end {
+            let j = graph.col_indices[idx] as usize;
+            let insert_pos = (row_offsets[j] + in_degree[j]) as usize;
+            
+            if col_indices.len() <= insert_pos {
+                col_indices.resize(insert_pos + 1, 0);
+                values.resize(insert_pos + 1, 0.0);
+            }
+            
+            col_indices[insert_pos] = i as u32;
+            values[insert_pos] = if degree > 0.0 { alpha / degree } else { 0.0 };
+            in_degree[j] += 1;
+        }
+    }
+    
+    // Add teleportation term
+    let teleport = (1.0 - alpha) / n as f32;
+    for i in 0..values.len() {
+        values[i] += teleport;
+    }
+    
+    (row_offsets, col_indices, values)
+}
+
+/// GPU sparse matrix-vector multiplication using ArrayFire
+#[cfg(feature = "arrayfire")]
+fn gpu_sparse_matvec(
+    row_offsets: &arrayfire::Array<u32>,
+    col_indices: &arrayfire::Array<u32>,
+    values: &arrayfire::Array<f32>,
+    x: &arrayfire::Array<f32>,
+    n: usize,
+) -> arrayfire::Array<f32> {
+    use arrayfire as af;
+    
+    // Create result vector
+    let mut result = af::constant(0.0f32, af::Dim4::new(&[n as u64, 1, 1, 1]));
+    
+    // For now, use a simple implementation
+    // In practice, would use optimized sparse BLAS routines
+    let mut host_row_offsets = vec![0u32; row_offsets.elements()];
+    let mut host_col_indices = vec![0u32; col_indices.elements()];
+    let mut host_values = vec![0.0f32; values.elements()];
+    let mut host_x = vec![0.0f32; n];
+    
+    row_offsets.host(&mut host_row_offsets);
+    col_indices.host(&mut host_col_indices);
+    values.host(&mut host_values);
+    x.host(&mut host_x);
+    
+    let mut host_result = vec![0.0f32; n];
+    
+    for i in 0..n {
+        let start = host_row_offsets[i] as usize;
+        let end = host_row_offsets[i + 1] as usize;
+        let mut sum = 0.0;
+        
+        for j in start..end {
+            if j < host_col_indices.len() && j < host_values.len() {
+                let col = host_col_indices[j] as usize;
+                if col < host_x.len() {
+                    sum += host_values[j] * host_x[col];
+                }
+            }
+        }
+        host_result[i] = sum;
+    }
+    
+    af::Array::new(&host_result, af::Dim4::new(&[n as u64, 1, 1, 1]))
 }
 
 /// GPU-accelerated BFS
