@@ -1,18 +1,30 @@
 # Linguist overrides to properly detect Rust project
-*.rs linguist-language=Rust
+*.rs linguist-language=Rust linguist-detectable=true
 *.toml linguist-language=TOML
+
+# Python bindings are just wrappers for Rust implementation
+python/**/*.py linguist-vendored
+*.py linguist-vendored
+test_implementation.py linguist-vendored
 
 # Mark vendored/generated files
 .venv/* linguist-vendored
 target/* linguist-vendored
 Cargo.lock linguist-generated
+*.so linguist-generated
 
-# Documentation
+# Documentation and data files
 *.md linguist-documentation
+*.txt linguist-documentation
 IMPLEMENTATION_GUIDE.md linguist-documentation
+IMPLEMENTATION_SUMMARY.md linguist-documentation
 
-# Ensure Makefile is detected as configuration
-Makefile linguist-detectable=false
+# Build/config files shouldn't count as primary language
+Makefile linguist-vendored
+*.yml linguist-vendored
+*.yaml linguist-vendored
 
-# Count Rust as primary language
+# Ensure Rust files are counted as primary language
 src/**/*.rs linguist-detectable=true
+src/algorithms/**/*.rs linguist-detectable=true
+src/graph/**/*.rs linguist-detectable=true
